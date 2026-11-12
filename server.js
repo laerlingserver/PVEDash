@@ -10,7 +10,10 @@ const crypto = require('crypto');
 const PORT = Number(process.env.PORT || 3000);
 const BIND = process.env.BIND || '127.0.0.1';
 const PVE_HOST = process.env.PVE_HOST || ''; // e.g. pve.example.com:8006 (locks the target if set)
-const INSECURE = process.env.PVE_INSECURE_TLS !== 'false'; // Proxmox commonly uses self-signed certs
+// Without PVE_HOST, logins are restricted to this comma-separated allow list (prevents SSRF).
+const ALLOWED_HOSTS = (process.env.ALLOWED_HOSTS || '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
+const INSECURE = process.env.PVE_INSECURE_TLS === 'true'; // verification is on unless explicitly disabled
+const CA_CERT = process.env.PVE_CA_CERT ? fs.readFileSync(process.env.PVE_CA_CERT) : undefined; // trust a self-signed Proxmox CA
 const PUBLIC = path.join(__dirname, 'public');
 const TRUST_PROXY = process.env.TRUST_PROXY === 'true'; // honour X-Forwarded-Proto from a reverse proxy
 const SESSION_TTL = 2 * 60 * 60 * 1000; // PVE tickets expire after 2h
@@ -25,6 +28,13 @@ function normalizeHost(h) {
   return /:\d+$/.test(h) ? h : h + ':8006';
 }
 
+function resolveHost(requested) {
+  if (PVE_HOST) return normalizeHost(PVE_HOST);
+  const h = normalizeHost(requested);
+  if (!ALLOWED_HOSTS.some((a) => normalizeHost(a).toLowerCase() === h.toLowerCase())) throw new Error('Host not allowed');
+  return h;
+}
+
 function pveRequest(host, method, apiPath, { headers = {}, body } = {}) {
   const [hostname, port] = host.startsWith('[')
     ? [host.slice(1, host.indexOf(']')), host.split(']:')[1]]
@@ -33,7 +43,7 @@ function pveRequest(host, method, apiPath, { headers = {}, body } = {}) {
     const payload = body === undefined ? null : JSON.stringify(body);
     const req = https.request({
       hostname, port: Number(port || 8006), method, path: '/api2/json' + apiPath,
-      rejectUnauthorized: !INSECURE, timeout: 30000,
+      rejectUnauthorized: !INSECURE, ca: CA_CERT, timeout: 30000,
       headers: { Accept: 'application/json', ...(payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {}), ...headers },
     }, (res) => {
       const chunks = [];
@@ -83,7 +93,8 @@ function authHeaders(s, method) {
 
 async function handleLogin(req, res) {
   const b = (await readBody(req)) || {};
-  const host = normalizeHost(PVE_HOST || b.host);
+  let host;
+  try { host = resolveHost(b.host); } catch { return send(res, 400, { error: 'Host not allowed' }); }
   let session;
   if (b.tokenId && b.tokenSecret) {
     session = { host, token: `${b.tokenId}=${b.tokenSecret}`, user: b.tokenId };
@@ -138,7 +149,7 @@ function serveStatic(req, res, url) {
   if (!file.startsWith(PUBLIC + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY' });
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'", 'Referrer-Policy': 'no-referrer' });
     res.end(data);
   });
 }
@@ -149,11 +160,14 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/api/')) await handleApi(req, res, url);
     else serveStatic(req, res, url);
   } catch (e) {
-    if (!res.headersSent) send(res, 502, { error: e.message || 'Proxy error' });
+    // Don't leak network error details (ECONNREFUSED etc.) that would reveal internal topology.
+    if (!res.headersSent) send(res, 502, { error: e.message === 'Invalid JSON' || e.message === 'Body too large' ? e.message : 'Could not reach Proxmox' });
   }
 });
 
 if (require.main === module) {
+  if (!PVE_HOST && !ALLOWED_HOSTS.length) { console.error('Set PVE_HOST (or ALLOWED_HOSTS) to the Proxmox host to connect to.'); process.exit(1); }
+  if (INSECURE) console.warn('WARNING: PVE_INSECURE_TLS=true, Proxmox certificates are not verified.');
   server.listen(PORT, BIND, () => console.log(`PVEDash listening on http://${BIND}:${PORT}${PVE_HOST ? ` -> ${PVE_HOST}` : ''}`));
 }
 module.exports = { server, normalizeHost };

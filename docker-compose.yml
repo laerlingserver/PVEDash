@@ -1,0 +1,11 @@
+services:
+  pvedash:
+    build: .
+    # image: ghcr.io/laerlingserver/pvedash:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"   # keep loopback-only when using a reverse proxy
+    environment:
+      PVE_HOST: pve.example.com:8006   # your Proxmox host
+      PVE_INSECURE_TLS: "true"         # "false" if Proxmox has a trusted certificate
+      TRUST_PROXY: "true"              # when behind a TLS-terminating reverse proxy

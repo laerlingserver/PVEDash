@@ -19,3 +19,8 @@ Sign in with a Proxmox user/password or an API token. Credentials stay in an in-
 (HttpOnly cookie) and are never sent to the browser. Sessions expire after 2 hours and are lost on restart.
 
 Limitations: no two-factor password login (use an API token); the console button opens Proxmox's own noVNC page.
+
+## Docker & reverse proxy
+
+`docker compose up -d` (edit `PVE_HOST` in `docker-compose.yml`). Setup guides live in [`docs/wiki`](docs/wiki)
+(Docker, Reverse-Proxy) and are mirrored to the GitHub wiki.

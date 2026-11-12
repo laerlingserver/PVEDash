@@ -12,6 +12,7 @@ const BIND = process.env.BIND || '127.0.0.1';
 const PVE_HOST = process.env.PVE_HOST || ''; // e.g. pve.example.com:8006 (locks the target if set)
 const INSECURE = process.env.PVE_INSECURE_TLS !== 'false'; // Proxmox commonly uses self-signed certs
 const PUBLIC = path.join(__dirname, 'public');
+const TRUST_PROXY = process.env.TRUST_PROXY === 'true'; // honour X-Forwarded-Proto from a reverse proxy
 const SESSION_TTL = 2 * 60 * 60 * 1000; // PVE tickets expire after 2h
 
 const sessions = new Map();
@@ -104,7 +105,7 @@ async function handleLogin(req, res) {
   const sid = crypto.randomBytes(32).toString('hex');
   sessions.set(sid, session);
   send(res, 200, { user: session.user, host }, {
-    'Set-Cookie': `sid=${sid}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL / 1000}`,
+    'Set-Cookie': `sid=${sid}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL / 1000}${TRUST_PROXY && req.headers['x-forwarded-proto'] === 'https' ? '; Secure' : ''}`,
   });
 }
 

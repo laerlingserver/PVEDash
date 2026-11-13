@@ -4,8 +4,8 @@ services:
     # image: ghcr.io/laerlingserver/pvedash:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"   # keep loopback-only when using a reverse proxy
+      - "3000:3000"             # use "127.0.0.1:3000:3000" instead when a reverse proxy on this host fronts it
     environment:
       PVE_HOST: pve.example.com:8006   # your Proxmox host
       PVE_INSECURE_TLS: "false"        # "true" only for self-signed certs (or mount a CA and set PVE_CA_CERT)
-      TRUST_PROXY: "true"              # when behind a TLS-terminating reverse proxy
+      # TRUST_PROXY: "true"            # uncomment when behind a TLS-terminating reverse proxy

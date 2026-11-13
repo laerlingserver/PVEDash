@@ -1,7 +1,7 @@
 # Reverse proxy (HTTPS)
 
 PVEDash sends Proxmox credentials through a login form, so always serve it over HTTPS.
-Run it with `TRUST_PROXY=true` and publish port 3000 on loopback only. Replace `pvedash.example.com`.
+Run it with `TRUST_PROXY=true` and publish port 3000 on loopback only (`127.0.0.1:3000:3000`). Replace `pvedash.example.com`.
 
 ## Caddy (automatic certificates)
 

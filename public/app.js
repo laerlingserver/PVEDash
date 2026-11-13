@@ -266,10 +266,11 @@ async function create(el) {
   <button class="primary">Create</button></form></div>`;
   el.querySelectorAll('#kind a').forEach((a) => a.onclick = () => { c.kind = a.dataset.k; render(true); });
   const form = el.querySelector('#cf');
-  el.querySelectorAll('.size').forEach((s) => s.onclick = () => {
+  const cards = [...el.querySelectorAll('.size')]; // el is emptied after mount, so capture the nodes now
+  cards.forEach((s) => s.onclick = () => {
     c.size = +s.dataset.i; const z = SIZES[c.size];
     form.cores.value = z[1]; form.memory.value = z[2]; form.disk.value = z[3];
-    el.querySelectorAll('.size').forEach((x) => x.classList.toggle('sel', x === s));
+    cards.forEach((x) => x.classList.toggle('sel', x === s));
   });
   el.querySelector('[name=node]').onchange = (e) => { c.node = e.target.value; render(true); };
   el.querySelector('#cf').onsubmit = async (e) => {

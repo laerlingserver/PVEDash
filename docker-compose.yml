@@ -1,7 +1,6 @@
 services:
   pvedash:
-    build: .
-    # image: ghcr.io/laerlingserver/pvedash:latest
+    image: laerlingserver/pvedash:latest   # or build locally: replace with "build: ."
     restart: unless-stopped
     ports:
       - "3000:3000"             # use "127.0.0.1:3000:3000" instead when a reverse proxy on this host fronts it

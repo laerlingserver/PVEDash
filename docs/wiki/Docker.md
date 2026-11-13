@@ -1,6 +1,6 @@
 # Running with Docker
 
-A prebuilt image is on Docker Hub: `laerlingserver/pvedash:latest`.
+Prebuilt images: `laerlingserver/pvedash:latest` (Docker Hub) and `ghcr.io/laerlingserver/pvedash:latest` (GitHub Container Registry).
 
 ```sh
 docker run -d --name pvedash --restart unless-stopped \

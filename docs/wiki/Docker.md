@@ -1,12 +1,15 @@
 # Running with Docker
 
+Prebuilt images: `laerlingserver/pvedash:latest` (Docker Hub) and `ghcr.io/laerlingserver/pvedash:latest` (GitHub Container Registry).
+
 ```sh
-docker build -t pvedash .
 docker run -d --name pvedash --restart unless-stopped \
   -p 3000:3000 \
   -e PVE_HOST=pve.example.com:8006 \
-  pvedash
+  laerlingserver/pvedash:latest
 ```
+
+To build it yourself instead: `docker build -t pvedash .` and run `pvedash`.
 
 Or `docker compose up -d` using the `docker-compose.yml` in the repo (edit `PVE_HOST` first).
 

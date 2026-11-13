@@ -24,5 +24,5 @@ Limitations: no two-factor password login (use an API token); the console button
 
 ## Docker & reverse proxy
 
-`docker compose up -d` (edit `PVE_HOST` in `docker-compose.yml`). Setup guides live in [`docs/wiki`](docs/wiki)
+Prebuilt images: `laerlingserver/pvedash:latest` (Docker Hub) or `ghcr.io/laerlingserver/pvedash:latest`. `docker compose up -d` (edit `PVE_HOST` in `docker-compose.yml`). Setup guides live in [`docs/wiki`](docs/wiki)
 (Docker, Reverse-Proxy) and are mirrored to the GitHub wiki.

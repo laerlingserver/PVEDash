@@ -173,6 +173,8 @@ function chart(rows, key, max, color) {
 }
 
 async function instance(el, type, node, vmid, tab = 'overview') {
+  if (!['qemu', 'lxc'].includes(type) || !/^\d+$/.test(vmid) || !/^[A-Za-z0-9.\-]+$/.test(node)) throw new Error('Invalid instance address');
+  if (!['overview', 'snapshots', 'configuration'].includes(tab)) tab = 'overview';
   const base = `/nodes/${node}/${type}/${vmid}`;
   const [cur, cfg] = await Promise.all([pve('GET', base + '/status/current'), pve('GET', base + '/config')]);
   const running = cur.status === 'running';
